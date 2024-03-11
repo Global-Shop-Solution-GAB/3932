@@ -1,0 +1,420 @@
+Program.Sub.ScreenSU.Start
+gui.SS_Form1..create
+gui.SS_Form1..caption("Open Payables")
+gui.SS_Form1..size(2250,2355)
+gui.SS_Form1..minx(0)
+gui.SS_Form1..miny(0)
+gui.SS_Form1..position(9660,6930)
+gui.SS_Form1..event(unload,ss_form1_unload)
+gui.SS_Form1..alwaysontop(False)
+gui.SS_Form1..fontname("Arial")
+gui.SS_Form1..fontsize(8)
+gui.SS_Form1..forecolor(0)
+gui.SS_Form1..fontstyle(,,,,)
+gui.SS_Form1..BackColor(-2147483633)
+gui.SS_Form1..controlbox(True)
+gui.SS_Form1..maxbutton(False)
+gui.SS_Form1..minbutton(False)
+gui.SS_Form1..mousepointer(0)
+gui.SS_Form1..moveable(True)
+gui.SS_Form1..sizeable(False)
+gui.SS_Form1..ShowInTaskBar(True)
+gui.SS_Form1..titlebar(True)
+gui.SS_Form1.lbl_dtpsDate.create(label,"Start Date",True,1800,200,1,100,135,True,0,Arial,8,-2147483633,0)
+gui.SS_Form1.lbl_dtpsDate.defaultvalue("")
+gui.SS_Form1.lbl_dtpsDate.controlgroup(0)
+gui.SS_Form1.dtpsDate.create(datepicker)
+gui.SS_Form1.dtpsDate.visible(True)
+gui.SS_Form1.dtpsDate.size(1800,345)
+gui.SS_Form1.dtpsDate.zorder(0)
+gui.SS_Form1.dtpsDate.position(100,335)
+gui.SS_Form1.dtpsDate.enabled(True)
+gui.SS_Form1.dtpsDate.checkbox(False)
+gui.SS_Form1.dtpsDate.defaultvalue("")
+gui.SS_Form1.dtpsDate.controlgroup(0)
+gui.SS_Form1.lbl_ddlType.create(label,"Report Type",True,1800,200,1,100,765,True,0,Arial,8,-2147483633,0)
+gui.SS_Form1.lbl_ddlType.defaultvalue("")
+gui.SS_Form1.lbl_ddlType.controlgroup(0)
+gui.SS_Form1.ddlType.create(dropdownlist)
+gui.SS_Form1.ddlType.visible(True)
+gui.SS_Form1.ddlType.size(1800,330)
+gui.SS_Form1.ddlType.zorder(0)
+gui.SS_Form1.ddlType.position(100,965)
+gui.SS_Form1.ddlType.enabled(True)
+gui.SS_Form1.ddlType.fontname("Arial")
+gui.SS_Form1.ddlType.fontsize(8)
+gui.SS_Form1.ddlType.defaultvalue("")
+gui.SS_Form1.ddlType.controlgroup(0)
+gui.SS_Form1.cmdPrint.create(button)
+gui.SS_Form1.cmdPrint.caption("Ok")
+gui.SS_Form1.cmdPrint.visible(True)
+gui.SS_Form1.cmdPrint.size(1000,360)
+gui.SS_Form1.cmdPrint.zorder(0)
+gui.SS_Form1.cmdPrint.position(100,1380)
+gui.SS_Form1.cmdPrint.enabled(True)
+gui.SS_Form1.cmdPrint.fontname("Arial")
+gui.SS_Form1.cmdPrint.fontsize(8)
+gui.SS_Form1.cmdPrint.event(click,cmdprint_click)
+gui.SS_Form1.cmdPrint.defaultvalue("")
+gui.SS_Form1.cmdPrint.controlgroup(0)
+gui.SS_Form1.dtpsDate.tabstop(True)
+gui.SS_Form1.dtpsDate.tabindex(1)
+gui.SS_Form1.ddlType.tabstop(True)
+gui.SS_Form1.ddlType.tabindex(2)
+gui.SS_Form1.cmdPrint.tabstop(True)
+gui.SS_Form1.cmdPrint.tabindex(3)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.Global.iBIRunID.Declare(Long,-1)
+Variable.Global.iBILogID.Declare(Long,-1)
+Variable.UDT.URecord.Define("sVendor",String,VENDOR)
+Variable.UDT.URecord.Define("fNet",Float,NET)
+Variable.UDT.URecord.Define("fWeek1",Float)
+Variable.UDT.URecord.Define("fWeek2",Float)
+Variable.UDT.URecord.Define("fWeek3",Float)
+Variable.UDT.URecord.Define("fWeek4",Float)
+Variable.UDT.URecord.Define("fWeek5",Float)
+Variable.UDT.URecord.Define("fWeek6",Float)
+Variable.UDT.URecord.Define("fWeek7",Float)
+Variable.UDT.URecord.Define("fWeek8",Float)
+Variable.UDT.URecord.Define("fWeek9",Float)
+Variable.UDT.URecord.Define("fWeek10",Float)
+Variable.UDT.URecord.Define("sType",String,TYPE)
+Variable.UDT.URecord.Define("sBatchNo",String,BATCH_NUM)
+Variable.UDT.URecord.Define("sInvoiceNo",String,INVOICE)
+Variable.UDT.URecord.Define("fDiscount",Float,DISCOUNT_INVOICE)
+Variable.UDT.URecord.Define("sJob",String,JOB)
+Variable.UDT.URecord.Define("iBIRunID",Long)
+Variable.UDT.URecord.Define("fAmtInvoice",Float,AMT_INVOICE)
+Variable.uGlobal.uRecord.Declare("URecord")
+Variable.Global.iRecordUB.Declare(Long,-1)
+Variable.Global.dWeek.Declare(Date,1/1/1900)
+Variable.Global.sWeek.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+'8/14/14 - Made modification to calculate DATE_INVOICE_DUE based on DISCOUNT_DAYS for Accurals; Sub: SelectDataCont. - MAT
+
+'8/3/15 - Added error handling, and addressed some bugs found when working on Call KBK010-7120151630-8 - BCC
+V.Local.sError.Declare(String)
+
+F.ODBC.connection!conx.OpenConnection(V.Ambient.PDSN,V.Ambient.pUser,V.Ambient.PPass)
+
+Gui.SS_Form1.ddlType.AddItem("Detail")
+Gui.SS_Form1.ddlType.AddItem("Summary")
+Gui.SS_Form1.ddlType.Text("Detail")
+
+Gui.SS_Form1..show
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3932_OPEN_PAYABLES.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+Program.Sub.cmdprint_click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdprint_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+Gui.SS_Form1..Visible(False)
+
+F.Global.BI.GetRunID(V.Global.iBIRunID)
+
+'Staring Logging
+F.Intrinsic.Control.If(V.Ambient.IsInIDE,=,True)
+        F.Global.BI.StartLogging(V.Global.iBIRunID,100000,0,"",V.Global.iBILogID)
+F.Intrinsic.Control.Else
+        F.Global.BI.StartLogging(V.Global.iBIRunID,-1,-1,"",V.Global.iBILogID)
+F.Intrinsic.Control.EndIf
+
+'Clear UDT
+V.uGlobal.uRecord.Redim(-1,-1)
+
+F.Intrinsic.Control.CallSub(Getweeks)
+F.Intrinsic.Control.CallSub(Loadudt_rst)
+'Stopping BI logging
+F.Global.BI.StopLogging(V.Global.iBILogID)
+
+F.Intrinsic.Control.CallSub(Callbi)
+F.Intrinsic.Control.CallSub(Ss_form1_unload)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdprint_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3932_OPEN_PAYABLES.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.cmdprint_click.End
+
+Program.Sub.GetWeeks.Start
+F.Intrinsic.Control.SetErrorHandler("GetWeeks_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+V.Local.i.Declare(Long)
+V.Local.iDays.Declare(Long)
+
+V.Global.dWeek.Redim(0,9)
+V.Global.sWeek.Redim(0,9)
+
+F.Intrinsic.Control.For(V.Local.i,0,9,1)
+	F.Intrinsic.Math.Mult(V.Local.i,7,V.Local.iDays)
+	F.Intrinsic.Date.DateAdd("d",V.Local.iDays,V.Screen.SS_Form1!dtpsDate.Value,V.Global.dWeek(V.Local.i))
+	F.Intrinsic.String.Format(V.Global.dWeek(V.Local.i),"yyyy-mm-dd",V.Global.sWeek(V.Local.i))
+F.Intrinsic.Control.Next(V.Local.i)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("GetWeeks_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3932_OPEN_PAYABLES.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.GetWeeks.End
+
+Program.Sub.LoadUDT_RST.Start
+F.Intrinsic.Control.SetErrorHandler("LoadUDT_RST_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+V.Local.i.Declare(Long)
+'i2 is used to get the next element in the weeks list during the loop
+V.Local.i2.Declare(Long)
+V.Local.sSql.Declare(String)
+V.Local.sWhere.Declare(String)
+V.Local.sMessage.Declare(String)
+V.Local.iRecUB.Declare(Long)
+V.Local.iRec.Declare(Long)
+
+F.Intrinsic.UI.InvokeWaitDialog("Loading...","Please Wait...")
+
+F.Intrinsic.Control.for(V.Local.i,0,9,1)
+	F.Intrinsic.Math.Add(V.Local.i,1,V.Local.i2)
+	
+	F.Intrinsic.String.Build("Loading Week {0} of 10",V.Local.i2,V.Local.sMessage)
+	F.Intrinsic.UI.ChangeWaitStatus(V.Local.sMessage)
+	
+	F.Intrinsic.Control.If(V.Local.i,=,0)
+		F.Intrinsic.String.Build("DATE_INVOICE_DUE < '{0}'",V.Global.sWeek(V.Local.i2),V.Local.sWhere)
+	F.Intrinsic.Control.ElseIf(V.Local.i,=,9)
+		F.Intrinsic.String.Build("DATE_INVOICE_DUE >= '{0}'",V.Global.sWeek(V.Local.i),V.Local.sWhere)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("DATE_INVOICE_DUE >= '{0}' AND DATE_INVOICE_DUE < '{1}'",V.Global.sWeek(V.Local.i),V.Global.sWeek(V.Local.i2),V.Local.sWhere)
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.SelectCase(V.Local.i)
+		F.Intrinsic.Control.Case(0)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek1,"NET")
+		F.Intrinsic.Control.Case(1)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek1,"")
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek2,"NET")
+		F.Intrinsic.Control.Case(2)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek2,"")
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek3,"NET")
+		F.Intrinsic.Control.Case(3)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek3,"")
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek4,"NET")
+		F.Intrinsic.Control.Case(4)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek4,"")
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek5,"NET")
+		F.Intrinsic.Control.Case(5)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek5,"")
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek6,"NET")
+		F.Intrinsic.Control.Case(6)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek6,"")
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek7,"NET")
+		F.Intrinsic.Control.Case(7)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek7,"")
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek8,"NET")
+		F.Intrinsic.Control.Case(8)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek8,"")
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek9,"NET")
+		F.Intrinsic.Control.Case(9)
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek9,"")
+			F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek10,"NET")
+	F.Intrinsic.Control.EndSelect
+
+	F.Intrinsic.Control.CallSub(Selectdata,"sWhere",V.Local.sWhere,"sMessage",V.Local.sMessage)
+	
+	F.Intrinsic.Control.CallSub(Selectdatacont,"sWhere",V.Local.sWhere,"sMessage",V.Local.sMessage)
+
+F.Intrinsic.Control.Next(V.Local.i)
+
+' Loading Header table
+V.Local.sSQL.Set("SELECT * FROM GCG_3932_O_PAYABLES")
+F.ODBC.Connection!conx.OpenLocalRecordsetRW("rst",V.Local.sSQL)
+F.Intrinsic.Control.If(V.uGlobal.uRecord.UBound,>,-1)
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fAmtInvoice,"AMT_INVOICE")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek1,"WEEK1")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek2,"WEEK2")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek3,"WEEK3")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek4,"WEEK4")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek5,"WEEK5")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek6,"WEEK6")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek7,"WEEK7")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek8,"WEEK8")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek9,"WEEK9")
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!fWeek10,"WEEK10")
+	F.Intrinsic.Variable.udtsetmembervalue(V.uGlobal.uRecord!iBIRunID,V.global.iBIRunID)
+	F.Intrinsic.Variable.SetUDTFieldReference(V.uGlobal.uRecord!iBIRunID,"BIRUNID")
+	F.Intrinsic.Variable.SaveUDTToRecordset("conx","rst","v.uGlobal.uRecord")
+F.Intrinsic.Control.EndIf
+F.ODBC.conx!rst.Close
+
+F.Intrinsic.UI.CloseWaitDialog
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("LoadUDT_RST_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3932_OPEN_PAYABLES.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.LoadUDT_RST.End
+
+program.sub.ss_form1_unload.start
+F.Intrinsic.Control.SetErrorHandler("ss_form1_unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!conx.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("ss_form1_unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3932_OPEN_PAYABLES.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+
+program.sub.ss_form1_unload.end
+
+Program.Sub.CallBI.Start
+F.Intrinsic.Control.SetErrorHandler("CallBI_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+V.local.iRet.declare(String)
+
+V.Local.sParams.Declare(String)
+V.Local.sParamVals.Declare(String)
+
+V.Local.sParams.Set("StartDate*!*ReportType")
+F.Intrinsic.String.DateString(V.Screen.SS_Form1!dtpSDate.Value,V.Local.sParamVals)
+F.Intrinsic.String.Build("{0}*!*{1}",V.Local.sParamVals,V.Screen.SS_Form1!ddlType.Text,V.Local.sParamVals)
+
+F.Global.BI.RunReportPreProcessor(V.Global.iBIRunID,V.Global.iBILogID,V.Local.sParams,V.Local.sParamVals,"",-1,True,"",-1,"",-1,"","",V.Local.iRet)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("CallBI_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3932_OPEN_PAYABLES.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.CallBI.End
+
+Program.Sub.SelectData.Start
+F.Intrinsic.Control.SetErrorHandler("SelectData_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+'Passed Args: sWhere, sMessage
+V.Local.sSql.Declare(String)
+V.Local.fExtAmt.Declare(Float)
+V.Local.iRecUB.Declare(Long)
+V.Local.iRec.Declare(Long)
+
+F.Intrinsic.String.Build("Select VENDOR, BATCH_NUM, INVOICE, JOB, if (BATCH_CODE in ('11', '12'), -AMT_TRANSACTION, AMT_TRANSACTION) AMT_INVOICE, DISCOUNT_INVOICE, DATE_INVOICE, DATE_INVOICE_DUE, if (BATCH_CODE in ('11', '12'), -AMT_TRANSACTION + DISCOUNT_INVOICE, AMT_TRANSACTION - DISCOUNT_INVOICE) NET, 'I' TYPE From V_AP_OPEN_ITEMS Where BATCH_CODE <> '09' And {0}",V.Args.sWhere,V.Local.sSql)
+F.ODBC.Connection!conx.OpenLocalRecordsetRO("rstDetail",V.Local.sSql)
+
+F.Intrinsic.Control.If(V.ODBC.conx!rstDetail.EOF,<>,True)
+	F.Intrinsic.Variable.LoadUDTFromRecordset("conx","rstDetail","v.uglobal.uRecord",True)
+F.Intrinsic.Control.EndIf
+
+F.ODBC.conx!rstDetail.Close
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("SelectData_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3932_OPEN_PAYABLES.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.SelectData.End
+
+Program.Sub.SelectDataCont.Start
+F.Intrinsic.Control.SetErrorHandler("SelectDataCont_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+'Passed Args: sWhere, sMessage
+V.Local.sSql.Declare(String)
+
+F.Intrinsic.String.Build("Select VENDOR, BATCH_NUM, INVOICE, JOB, AMT_TRANSACTION AMT_INVOICE, DISCOUNT_INVOICE, DATE_INVOICE, DISCOUNT_DAYS, DateAdd({0}day{1} , (Select DISCOUNT_DAYS From V_VENDOR_PAY_TO Where V_VENDOR_PAY_TO.VENDOR = V_AP_OPEN_ITEMS.VENDOR),DATE_INVOICE) DATE_INVOICE_DUE, (AMT_TRANSACTION - DISCOUNT_INVOICE) NET, 'A' TYPE From V_AP_OPEN_ITEMS Left Join V_VENDOR_PAY_TO On V_VENDOR_PAY_TO.VENDOR = V_AP_OPEN_ITEMS.VENDOR Where BATCH_CODE = '09' And {2}",V.Ambient.DblQuote,V.Ambient.DblQuote,V.Args.sWhere,V.Local.sSql)
+F.ODBC.Connection!conx.OpenLocalRecordsetRO("rstDetail",V.Local.sSql)
+
+F.Intrinsic.Control.If(V.ODBC.conx!rstDetail.EOF,<>,True)
+	F.Intrinsic.Variable.LoadUDTFromRecordset("conx","rstDetail","v.uglobal.uRecord",True)
+F.Intrinsic.Control.EndIf
+
+F.ODBC.conx!rstDetail.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("SelectDataCont_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3932_OPEN_PAYABLES.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.SelectDataCont.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_OPEN_PAYABLES$}$BSELLERS$}$3/20/2014
+${$3$}$0$}$$}$-1$}$-1$}$$}$1/1/1900$}$This project will create an AP Open Items report, that will detail Invoices and Acrruals with a due date in a ten-week period, based on an entered start date.
+Program.Sub.Comments.End
+Program.Sub.ScreenSS.Start
+SS_Form1{{CAPTION::Open Payables
+SS_Form1.CTRL{{NAME::dtpsDate\\TYPE::6\\CAPTION::Start Date\\TABSTOP::1\\GROUP::-1\\BROWSER::0\\SIZE::1
+SS_Form1.CTRL{{NAME::ddlType\\TYPE::4\\CAPTION::Report Type\\TABSTOP::2\\GROUP::-1\\BROWSER::0\\SIZE::1
+SS_Form1.CTRL{{NAME::cmdPrint\\TYPE::5\\CAPTION::Ok\\TABSTOP::3\\GROUP::-1\\BROWSER::0\\SIZE::1
+
+Program.Sub.ScreenSS.End
+
